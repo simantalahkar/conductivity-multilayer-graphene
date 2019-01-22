@@ -1,0 +1,84 @@
+##################################################################
+## Out of plane kth of 11layer 20*20nm polygraphene with 1 - 9 # grains perlayer in box ##
+##################################################################
+
+read_restart restart.out11hilo.eqlbm
+
+## Potential
+
+kspace_style  none
+pair_style airebo 1.92
+pair_coeff * * CH.airebo C
+
+## Simulation setup
+
+neighbor  4 bin
+neigh_modify  every 1 delay 0 check yes
+
+## Output and run
+
+thermo 50
+thermo_style custom step  etotal lx ly lz pe pxx pyy pzz temp cpuremain
+
+reset_timestep 0
+timestep 0.0001
+
+########################################################################
+
+compute tl1 layer1 temp
+compute tl2 layer2 temp
+compute tl3 layer3 temp
+compute tl4 layer4 temp
+compute tl5 layer5 temp
+compute tl6 layer6 temp
+compute tl7 layer7 temp
+compute tl8 layer8 temp
+compute tl9 layer9 temp
+compute tl10 layer10 temp
+compute tl11 layer11 temp
+
+compute zl1 layer1 reduce ave z
+compute zl2 layer2 reduce ave z
+compute zl3 layer3 reduce ave z
+compute zl4 layer4 reduce ave z
+compute zl5 layer5 reduce ave z
+compute zl6 layer6 reduce ave z
+compute zl7 layer7 reduce ave z
+compute zl8 layer8 reduce ave z
+compute zl9 layer9 reduce ave z
+compute zl10 layer10 reduce ave z
+compute zl11 layer11 reduce ave z
+
+dump  1 all atom 1000 ./out11lohi_thermal*.atom
+dump_modify   1 sort id
+
+fix	1 all ave/time 10 10000 100000 c_tl1 c_tl2 c_tl3 c_tl4 c_tl5 c_tl6 c_tl7 c_tl8 c_tl9 c_tl10 c_tl11 file out11lohiTEMP.txt
+
+fix	2 layer1 heat 1 1
+fix 	3 layer11 heat 1 -1
+
+fix 	4 all nve
+
+fix	5 all ave/time 10 10000 100000 c_zl1 c_zl2 c_zl3 c_zl4 c_zl5 c_zl6 c_zl7 c_zl8 c_zl9 c_zl10 c_zl11 file out11lohiPOS.txt
+
+#fix	6 all ave/time 10 100 1000 c_zl1 c_zl2 c_zl3 c_zl4 c_zl5 c_zl6 c_zl7 c_zl8 c_zl9 c_zl10 c_zl11 file out11lohiPOSdelta.txt
+
+#fix	7 all ave/time 10 100 1000 c_tl1 c_tl2 c_tl3 c_tl4 c_tl5 c_tl6 c_tl7 c_tl8 c_tl9 c_tl10 c_tl11 file out11lohiTEMPdelta.txt
+
+run 1000000
+unfix 1
+unfix 2
+unfix 3
+unfix 4
+unfix 5
+#unfix 6
+#unfix 7
+
+undump	1
+
+write_restart restart.out11lohi.thermal
+
+
+
+
+

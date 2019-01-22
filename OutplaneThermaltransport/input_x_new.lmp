@@ -1,0 +1,152 @@
+##################################################################
+## Out of plane kth of 11layer 20*20nm polygraphene with 1 - 9 # grains perlayer in box ##
+##################################################################
+
+## Simulation setup
+
+units           metal
+newton          on
+atom_style      atomic
+dimension       3
+boundary        p p p
+
+## Box and atom creation
+
+read_data	outmultigradedpoly.lammps
+
+mass 1 12.0107
+
+## Define groups of atoms coresponding to different layers
+
+region 1 block INF INF INF INF 0 20.4 units box
+group layer1 region 1
+
+region 2 block INF INF INF INF 20.4 23.8 units box
+group layer2 region 2
+
+region 3 block INF INF INF INF 23.8 27.2 units box
+group layer3 region 3
+
+region 4 block INF INF INF INF 27.2 30.6 units box
+group layer4 region 4
+
+region 5 block INF INF INF INF 30.6 34 units box
+group layer5 region 5
+
+region 6 block INF INF INF INF 34 37.4 units box
+group layer6 region 6
+
+region 7 block INF INF INF INF 37.4 40.8 units box
+group layer7 region 7
+
+region 8 block INF INF INF INF 40.8 44.2 units box
+group layer8 region 8
+
+region 9 block INF INF INF INF 44.2 47.6 units box
+group layer9 region 9
+
+region 10 block INF INF INF INF 47.6 51 units box
+group layer10 region 10
+
+region 11 block INF INF INF INF 51 INF units box
+group layer11 region 11
+
+
+velocity all create 1 87654 dist gaussian
+
+###################### Minimization
+
+## Potential
+
+kspace_style  none
+pair_style airebo 1.92
+pair_coeff * * CH.airebo C
+
+## Simulation setup
+
+neighbor  4 bin
+neigh_modify  every 1 delay 0 check yes
+
+## Output and run
+
+thermo 50
+thermo_style custom step  etotal lx ly lz pe pxx pyy pzz temp cpuremain
+
+fix 1 all box/relax aniso 1.0
+
+dump  1 all atom 100 ./out11hilo_1min*.atom
+dump_modify   1 sort id
+
+minimize 0 1.0e-12 3000 3000
+
+velocity all create 1 324596 dist gaussian
+
+undump	1
+
+dump  1 all atom 500 ./out11hilo_2min*.atom
+dump_modify   1 sort id
+
+minimize 0 1.0e-12 3000 3000
+
+undump	1
+
+unfix	1
+
+##################### Equilibrated polygraphene at room temperature
+
+reset_timestep	0
+timestep 0.0001
+
+dump  1 all atom 1000 ./out11hilo_eqlbrm*.atom
+dump_modify   1 sort id
+
+
+fix 1 all nvt temp 1 300.00 0.001 drag 2
+
+run 50000 
+unfix 1
+
+undump	1
+
+reset_timestep 0
+
+######################## Relaxation: Fixed volume
+
+dump  1 all atom 100 ./out11hilo_min2.*.atom
+dump_modify   1 sort id
+
+minimize 0 1.0e-12 3000 3000
+
+velocity all create 300 324596 dist gaussian
+
+run 0
+
+minimize 0 1.0e-12 3000 3000
+
+velocity all create 300 684516 dist gaussian
+
+run 0
+
+minimize 0 1.0e-12 3000 3000
+
+velocity all create 300 64648384 dist gaussian
+
+undump	1
+
+dump  1 all atom 1000 ./out11hilo_2eqlbrm.atom
+dump_modify   1 sort id
+
+fix 1 all nvt temp 300.00 300.00 0.001 drag 2
+
+run 15000 
+unfix 1
+
+undump	1
+
+
+write_restart restart.out11hilo.eqlbm
+
+
+
+
+
